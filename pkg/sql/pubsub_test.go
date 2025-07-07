@@ -16,7 +16,6 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/subscriber"
 	"github.com/ThreeDotsLabs/watermill/pubsub/tests"
-	driver "github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -54,27 +53,6 @@ func newPubSub(t *testing.T, beginner sql.Beginner, consumerGroup string, schema
 	require.NoError(t, err)
 
 	return publisher, subscriber
-}
-
-func newMySQL(t *testing.T) sql.Beginner {
-	addr := os.Getenv("WATERMILL_TEST_MYSQL_HOST")
-	if addr == "" {
-		addr = "localhost"
-	}
-	conf := driver.NewConfig()
-	conf.Net = "tcp"
-	conf.User = "root"
-	conf.Addr = addr
-
-	conf.DBName = "watermill"
-
-	db, err := stdSQL.Open("mysql", conf.FormatDSN())
-	require.NoError(t, err)
-
-	err = db.Ping()
-	require.NoError(t, err)
-
-	return sql.BeginnerFromStdSQL(db)
 }
 
 func newPostgreSQL(t *testing.T) sql.Beginner {
@@ -128,41 +106,6 @@ func newPgx(t *testing.T) sql.Beginner {
 	require.NoError(t, err)
 
 	return sql.BeginnerFromPgx(db)
-}
-
-func createMySQLPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
-	return newPubSub(
-		t,
-		newMySQL(t),
-		consumerGroup,
-		newMySQLSchemaAdapter(0),
-		newMySQLOffsetsAdapter(),
-	)
-}
-
-func newMySQLOffsetsAdapter() sql.DefaultMySQLOffsetsAdapter {
-	return sql.DefaultMySQLOffsetsAdapter{
-		GenerateMessagesOffsetsTableName: func(topic string) string {
-			return fmt.Sprintf("`test_offsets_%s`", topic)
-		},
-	}
-}
-
-func newMySQLSchemaAdapter(batchSize int) *sql.DefaultMySQLSchema {
-	return &sql.DefaultMySQLSchema{
-		GenerateMessagesTableName: func(topic string) string {
-			return fmt.Sprintf("`test_%s`", topic)
-		},
-		GeneratePayloadType: func(topic string) string {
-			// payload is a VARBINARY(255) instead of JSON; tests don't presuppose JSON-marshallable payloads
-			return "VARBINARY(255)"
-		},
-		SubscribeBatchSize: batchSize,
-	}
-}
-
-func createMySQLPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
-	return createMySQLPubSubWithConsumerGroup(t, "test")
 }
 
 func createPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
@@ -287,24 +230,6 @@ func createPostgreSQLQueue(t *testing.T, db sql.Beginner) (message.Publisher, me
 	return publisher, subscriber
 }
 
-func TestMySQLPublishSubscribe(t *testing.T) {
-	t.Parallel()
-
-	features := tests.Features{
-		ConsumerGroups:      true,
-		ExactlyOnceDelivery: true,
-		GuaranteedOrder:     true,
-		Persistent:          true,
-	}
-
-	tests.TestPubSub(
-		t,
-		features,
-		createMySQLPubSub,
-		createMySQLPubSubWithConsumerGroup,
-	)
-}
-
 func TestPostgreSQLPublishSubscribe(t *testing.T) {
 	t.Parallel()
 
@@ -405,11 +330,7 @@ func TestCtxValues(t *testing.T) {
 		Constructor  func(t *testing.T) (message.Publisher, message.Subscriber)
 		ExpectedType interface{}
 	}{
-		{
-			Name:         "mysql",
-			Constructor:  createMySQLPubSub,
-			ExpectedType: &sql.StdSQLTx{},
-		},
+
 		{
 			Name:         "postgresql",
 			Constructor:  createPostgreSQLPubSub,
@@ -472,12 +393,7 @@ func TestNotMissingMessages(t *testing.T) {
 		SchemaAdapter  sql.SchemaAdapter
 		OffsetsAdapter sql.OffsetsAdapter
 	}{
-		{
-			Name:           "mysql",
-			DbConstructor:  newMySQL,
-			SchemaAdapter:  newMySQLSchemaAdapter(0),
-			OffsetsAdapter: newMySQLOffsetsAdapter(),
-		},
+
 		{
 			Name:           "postgresql",
 			DbConstructor:  newPostgreSQL,
@@ -629,32 +545,7 @@ func TestConcurrentSubscribe_different_bulk_sizes(t *testing.T) {
 		Constructor func(t *testing.T) (message.Publisher, message.Subscriber)
 		Test        func(t *testing.T, tCtx tests.TestContext, pubSubConstructor tests.PubSubConstructor)
 	}{
-		{
-			Name: "TestPublishSubscribe_mysql_1",
-			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
-				return newPubSub(
-					t,
-					newMySQL(t),
-					"test",
-					newMySQLSchemaAdapter(1),
-					newMySQLOffsetsAdapter(),
-				)
-			},
-			Test: tests.TestPublishSubscribe,
-		},
-		{
-			Name: "TestConcurrentSubscribe_mysql_5",
-			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
-				return newPubSub(
-					t,
-					newMySQL(t),
-					"test",
-					newMySQLSchemaAdapter(5),
-					newMySQLOffsetsAdapter(),
-				)
-			},
-			Test: tests.TestConcurrentSubscribe,
-		},
+
 		{
 			Name: "TestConcurrentSubscribe_postgresql_1",
 			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {

@@ -18,19 +18,19 @@ func TestDefaultInsertMarkers(t *testing.T) {
 		},
 		{
 			Count:          1,
-			ExpectedOutput: "($1,$2,$3,pg_current_xact_id())",
+			ExpectedOutput: "($1,$2,$3,$4,pg_current_xact_id())",
 		},
 		{
 			Count:          2,
-			ExpectedOutput: "($1,$2,$3,pg_current_xact_id()),($4,$5,$6,pg_current_xact_id())",
+			ExpectedOutput: "($1,$2,$3,$4,pg_current_xact_id()),($5,$6,$7,$8,pg_current_xact_id())",
 		},
 		{
 			Count: 5,
-			ExpectedOutput: "($1,$2,$3,pg_current_xact_id())," +
-				"($4,$5,$6,pg_current_xact_id())," +
-				"($7,$8,$9,pg_current_xact_id())," +
-				"($10,$11,$12,pg_current_xact_id())," +
-				"($13,$14,$15,pg_current_xact_id())",
+			ExpectedOutput: "($1,$2,$3,$4,pg_current_xact_id())," +
+				"($5,$6,$7,$8,pg_current_xact_id())," +
+				"($9,$10,$11,$12,pg_current_xact_id())," +
+				"($13,$14,$15,$16,pg_current_xact_id())," +
+				"($17,$18,$19,$20,pg_current_xact_id())",
 		},
 	}
 

@@ -303,7 +303,7 @@ func (s *Subscriber) query(
 	if err != nil {
 		return false, fmt.Errorf("could not get select query: %w", err)
 	}
-	logger.Trace("Querying message", watermill.LogFields{
+	logger.Info("Querying message", watermill.LogFields{
 		"query":      selectQuery.Query,
 		"query_args": sqlArgsToLog(selectQuery.Args),
 	})

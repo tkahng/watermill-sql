@@ -46,6 +46,7 @@ func (s PostgreSQLQueueSchema) SchemaInitializingQueries(params SchemaInitializi
 			"uuid" VARCHAR(36) NOT NULL,
 			"payload" ` + s.payloadColumnType(params.Topic) + ` DEFAULT NULL,
 			"metadata" JSON DEFAULT NULL,
+			"topic" text NOT NULL,
 			"acked" BOOLEAN NOT NULL DEFAULT FALSE,
 			"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
@@ -56,12 +57,12 @@ func (s PostgreSQLQueueSchema) SchemaInitializingQueries(params SchemaInitializi
 
 func (s PostgreSQLQueueSchema) InsertQuery(params InsertQueryParams) (Query, error) {
 	insertQuery := fmt.Sprintf(
-		`INSERT INTO %s (uuid, payload, metadata) VALUES %s`,
+		`INSERT INTO %s (uuid, payload, metadata, topic) VALUES %s`,
 		s.MessagesTable(params.Topic),
 		queueInsertMarkers(len(params.Msgs)),
 	)
 
-	args, err := defaultInsertArgs(params.Msgs)
+	args, err := defaultWithTopicInsertArgs(params.Msgs, params.Topic)
 	if err != nil {
 		return Query{}, err
 	}
@@ -74,7 +75,7 @@ func queueInsertMarkers(count int) string {
 
 	index := 1
 	for i := 0; i < count; i++ {
-		result.WriteString(fmt.Sprintf("($%d,$%d,$%d),", index, index+1, index+2))
+		result.WriteString(fmt.Sprintf("($%d,$%d,$%d,$%d),", index, index+1, index+2, index+3))
 		index += 3
 	}
 
@@ -109,7 +110,7 @@ func (s PostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, err
 	}
 
 	selectQuery := `
-		SELECT "offset", uuid, payload, metadata FROM ` + s.MessagesTable(params.Topic) + `
+		SELECT "offset", uuid, payload, metadata, topic FROM ` + s.MessagesTable(params.Topic) + `
 		WHERE acked = false ` + where + `
 		ORDER BY
 			"offset" ASC
@@ -122,7 +123,7 @@ func (s PostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, err
 func (s PostgreSQLQueueSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row, error) {
 	r := Row{}
 
-	err := params.Row.Scan(&r.Offset, &r.UUID, &r.Payload, &r.Metadata)
+	err := params.Row.Scan(&r.Offset, &r.UUID, &r.Payload, &r.Metadata, &r.Topic)
 	if err != nil {
 		return Row{}, fmt.Errorf("could not scan message row: %w", err)
 	}
@@ -142,10 +143,11 @@ func (s PostgreSQLQueueSchema) UnmarshalMessage(params UnmarshalMessageParams) (
 }
 
 func (s PostgreSQLQueueSchema) MessagesTable(topic string) string {
-	if s.GenerateMessagesTableName != nil {
-		return s.GenerateMessagesTableName(topic)
-	}
-	return fmt.Sprintf(`"watermill_%s"`, topic)
+	// if s.GenerateMessagesTableName != nil {
+	// 	return s.GenerateMessagesTableName(topic)
+	// }
+	return `"watermill_messages"`
+
 }
 
 func (s PostgreSQLQueueSchema) SubscribeIsolationLevel() sql.IsolationLevel {

@@ -13,10 +13,10 @@ import (
 )
 
 func TestValidateTopicName(t *testing.T) {
-	schemaAdapter := sql.DefaultMySQLSchema{}
-	offsetsAdapter := sql.DefaultMySQLOffsetsAdapter{}
+	schemaAdapter := sql.DefaultPostgreSQLSchema{}
+	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{}
 
-	publisher, subscriber := newPubSub(t, newMySQL(t), "", schemaAdapter, offsetsAdapter)
+	publisher, subscriber := newPubSub(t, newPostgreSQL(t), "", schemaAdapter, offsetsAdapter)
 	cleverlyNamedTopic := "some_topic; DROP DATABASE `watermill`"
 
 	err := publisher.Publish(cleverlyNamedTopic, message.NewMessage("uuid", nil))

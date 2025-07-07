@@ -55,6 +55,7 @@ func (s DefaultPostgreSQLSchema) SchemaInitializingQueries(params SchemaInitiali
 			"created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			"payload" ` + s.PayloadColumnType(params.Topic) + ` DEFAULT NULL,
 			"metadata" JSON DEFAULT NULL,
+			"topic" text NOT NULL,
 			"transaction_id" xid8 NOT NULL,
 			PRIMARY KEY ("transaction_id", "offset")
 		);
@@ -77,12 +78,12 @@ func (s DefaultPostgreSQLSchema) SchemaInitializingQueries(params SchemaInitiali
 
 func (s DefaultPostgreSQLSchema) InsertQuery(params InsertQueryParams) (Query, error) {
 	insertQuery := fmt.Sprintf(
-		`INSERT INTO %s (uuid, payload, metadata, transaction_id) VALUES %s`,
+		`INSERT INTO %s (uuid, payload, metadata, topic, transaction_id) VALUES %s`,
 		s.MessagesTable(params.Topic),
 		defaultInsertMarkers(len(params.Msgs)),
 	)
 
-	args, err := defaultInsertArgs(params.Msgs)
+	args, err := defaultWithTopicInsertArgs(params.Msgs, params.Topic)
 	if err != nil {
 		return Query{}, err
 	}
@@ -95,8 +96,8 @@ func defaultInsertMarkers(count int) string {
 
 	index := 1
 	for i := 0; i < count; i++ {
-		result.WriteString(fmt.Sprintf("($%d,$%d,$%d,pg_current_xact_id()),", index, index+1, index+2))
-		index += 3
+		result.WriteString(fmt.Sprintf("($%d,$%d,$%d,$%d,pg_current_xact_id()),", index, index+1, index+2, index+3))
+		index += 4
 	}
 
 	return strings.TrimRight(result.String(), ",")
@@ -180,7 +181,7 @@ func (s DefaultPostgreSQLSchema) SelectQuery(params SelectQueryParams) (Query, e
 			` + nextOffsetQuery.Query + `
 		)
 
-		SELECT "offset", transaction_id::text, uuid, payload, metadata FROM ` + s.MessagesTable(params.Topic) + `
+		SELECT "offset", transaction_id::text, uuid, payload, metadata, topic FROM ` + s.MessagesTable(params.Topic) + `
 
 		WHERE 
 		(
@@ -194,6 +195,8 @@ func (s DefaultPostgreSQLSchema) SelectQuery(params SelectQueryParams) (Query, e
 		)
 		AND 
 			transaction_id < pg_snapshot_xmin(pg_current_snapshot())
+		AND 
+			"topic" = $2
 	) AS messages
 	ORDER BY
 		transaction_id ASC,
@@ -207,7 +210,7 @@ func (s DefaultPostgreSQLSchema) UnmarshalMessage(params UnmarshalMessageParams)
 	r := Row{}
 	var transactionID XID8
 
-	err := params.Row.Scan(&r.Offset, &transactionID, &r.UUID, &r.Payload, &r.Metadata)
+	err := params.Row.Scan(&r.Offset, &transactionID, &r.UUID, &r.Payload, &r.Metadata, &r.Topic)
 	if err != nil {
 		return Row{}, fmt.Errorf("could not scan message row: %w", err)
 	}
@@ -230,10 +233,10 @@ func (s DefaultPostgreSQLSchema) UnmarshalMessage(params UnmarshalMessageParams)
 }
 
 func (s DefaultPostgreSQLSchema) MessagesTable(topic string) string {
-	if s.GenerateMessagesTableName != nil {
-		return s.GenerateMessagesTableName(topic)
-	}
-	return fmt.Sprintf(`"watermill_%s"`, topic)
+	// if s.GenerateMessagesTableName != nil {
+	// 	return s.GenerateMessagesTableName(topic)
+	// }
+	return `"watermill_messages"`
 }
 
 func (s DefaultPostgreSQLSchema) PayloadColumnType(topic string) string {
