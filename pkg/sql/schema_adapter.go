@@ -76,16 +76,3 @@ func defaultWithTopicInsertArgs(msgs message.Messages, topic string) ([]interfac
 
 	return args, nil
 }
-func defaultInsertArgs(msgs message.Messages) ([]interface{}, error) {
-	var args []interface{}
-	for _, msg := range msgs {
-		metadata, err := json.Marshal(msg.Metadata)
-		if err != nil {
-			return nil, fmt.Errorf("could not marshal metadata into JSON for message %s: %w", msg.UUID, err)
-		}
-
-		args = append(args, msg.UUID, []byte(msg.Payload), metadata)
-	}
-
-	return args, nil
-}
