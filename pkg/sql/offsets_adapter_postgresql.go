@@ -23,7 +23,7 @@ func (a DefaultPostgreSQLOffsetsAdapter) SchemaInitializingQueries(params Offset
 				offset_acked BIGINT,
 				topic text NOT NULL,
 				last_processed_transaction_id xid8 NOT NULL,
-				PRIMARY KEY(consumer_group)
+				PRIMARY KEY(consumer_group, topic)
 			)`,
 		},
 	}, nil
@@ -49,11 +49,11 @@ func (a DefaultPostgreSQLOffsetsAdapter) AckMessageQuery(params AckMessageQueryP
 	VALUES 
 		($1, $2, $3, $4) 
 	ON CONFLICT 
-		(consumer_group) 
+		(consumer_group, topic) 
 	DO UPDATE SET 
 		offset_acked = excluded.offset_acked,
-		last_processed_transaction_id = excluded.last_processed_transaction_id,
-		topic = excluded.topic`
+		last_processed_transaction_id = excluded.last_processed_transaction_id
+		`
 
 	return Query{ackQuery, []any{params.LastRow.Offset, params.LastRow.ExtraData["transaction_id"], params.ConsumerGroup, params.Topic}}, nil
 }
@@ -62,7 +62,7 @@ func (a DefaultPostgreSQLOffsetsAdapter) MessagesOffsetsTable(topic string) stri
 	// if a.GenerateMessagesOffsetsTableName != nil {
 	// 	return a.GenerateMessagesOffsetsTableName(topic)
 	// }
-	return `"watermill_offsets"`
+	return `"trk_watermill_offsets"`
 }
 
 func (a DefaultPostgreSQLOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {

@@ -236,7 +236,7 @@ func (s DefaultPostgreSQLSchema) MessagesTable(topic string) string {
 	// if s.GenerateMessagesTableName != nil {
 	// 	return s.GenerateMessagesTableName(topic)
 	// }
-	return `"watermill_messages"`
+	return `"trk_watermill_messages"`
 }
 
 func (s DefaultPostgreSQLSchema) PayloadColumnType(topic string) string {
