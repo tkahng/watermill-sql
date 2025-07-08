@@ -76,7 +76,7 @@ func queueInsertMarkers(count int) string {
 	index := 1
 	for i := 0; i < count; i++ {
 		result.WriteString(fmt.Sprintf("($%d,$%d,$%d,$%d),", index, index+1, index+2, index+3))
-		index += 3
+		index += 4
 	}
 
 	return strings.TrimRight(result.String(), ",")
@@ -101,17 +101,16 @@ func (s PostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, err
 
 	var where string
 	var args []any
-
 	if s.GenerateWhereClause != nil {
 		where, args = s.GenerateWhereClause(whereParams)
 		if where != "" {
 			where = "AND " + where
 		}
 	}
-
+	args = append(args, params.Topic)
 	selectQuery := `
 		SELECT "offset", uuid, payload, metadata, topic FROM ` + s.MessagesTable(params.Topic) + `
-		WHERE acked = false ` + where + `
+		WHERE acked = false AND topic = $1 ` + where + `
 		ORDER BY
 			"offset" ASC
 		LIMIT ` + fmt.Sprintf("%d", s.batchSize()) + `

@@ -51,7 +51,7 @@ func (a PostgreSQLQueueOffsetsAdapter) MessagesTable(topic string) string {
 	// if a.GenerateMessagesTableName != nil {
 	// 	return a.GenerateMessagesTableName(topic)
 	// }
-	return `"trk_watermill_queue_offsets"`
+	return `"trk_watermill_queue_messages"`
 }
 
 func (a PostgreSQLQueueOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {

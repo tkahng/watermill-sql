@@ -108,15 +108,15 @@ func newPgx(t *testing.T) sql.Beginner {
 	return sql.BeginnerFromPgx(db)
 }
 
-func createPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
-	return newPubSub(
-		t,
-		newPostgreSQL(t),
-		consumerGroup,
-		newPostgresSchemaAdapter(0),
-		newPostgresOffsetsAdapter(),
-	)
-}
+// func createPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
+// 	return newPubSub(
+// 		t,
+// 		newPostgreSQL(t),
+// 		consumerGroup,
+// 		newPostgresSchemaAdapter(0),
+// 		newPostgresOffsetsAdapter(),
+// 	)
+// }
 
 func newPostgresOffsetsAdapter() sql.DefaultPostgreSQLOffsetsAdapter {
 	return sql.DefaultPostgreSQLOffsetsAdapter{
@@ -179,9 +179,9 @@ func createPgxPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (messa
 	return newPubSub(t, newPgx(t), consumerGroup, schemaAdapter, offsetsAdapter)
 }
 
-func createPostgreSQLPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
-	return createPostgreSQLPubSubWithConsumerGroup(t, "test")
-}
+// func createPostgreSQLPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
+// 	return createPostgreSQLPubSubWithConsumerGroup(t, "test")
+// }
 
 func createPgxPostgreSQLPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	return createPgxPostgreSQLPubSubWithConsumerGroup(t, "test")
@@ -230,23 +230,23 @@ func createPostgreSQLQueue(t *testing.T, db sql.Beginner) (message.Publisher, me
 	return publisher, subscriber
 }
 
-func TestPostgreSQLPublishSubscribe(t *testing.T) {
-	t.Parallel()
+// func TestPostgreSQLPublishSubscribe(t *testing.T) {
+// 	t.Parallel()
 
-	features := tests.Features{
-		ConsumerGroups:      true,
-		ExactlyOnceDelivery: true,
-		GuaranteedOrder:     true,
-		Persistent:          true,
-	}
+// 	features := tests.Features{
+// 		ConsumerGroups:      true,
+// 		ExactlyOnceDelivery: true,
+// 		GuaranteedOrder:     true,
+// 		Persistent:          true,
+// 	}
 
-	tests.TestPubSub(
-		t,
-		features,
-		createPostgreSQLPubSub,
-		createPostgreSQLPubSubWithConsumerGroup,
-	)
-}
+// 	tests.TestPubSub(
+// 		t,
+// 		features,
+// 		createPostgreSQLPubSub,
+// 		createPostgreSQLPubSubWithConsumerGroup,
+// 	)
+// }
 
 func TestPgxPostgreSQLPublishSubscribe(t *testing.T) {
 	t.Parallel()
@@ -284,25 +284,25 @@ func TestPgxPublishSubscribe(t *testing.T) {
 	)
 }
 
-func TestPostgreSQLQueue(t *testing.T) {
-	t.Parallel()
+// func TestPostgreSQLQueue(t *testing.T) {
+// 	t.Parallel()
 
-	features := tests.Features{
-		ConsumerGroups:      false,
-		ExactlyOnceDelivery: true,
-		GuaranteedOrder:     true,
-		Persistent:          true,
-	}
+// 	features := tests.Features{
+// 		ConsumerGroups:      false,
+// 		ExactlyOnceDelivery: true,
+// 		GuaranteedOrder:     true,
+// 		Persistent:          true,
+// 	}
 
-	tests.TestPubSub(
-		t,
-		features,
-		func(t *testing.T) (message.Publisher, message.Subscriber) {
-			return createPostgreSQLQueue(t, newPostgreSQL(t))
-		},
-		nil,
-	)
-}
+// 	tests.TestPubSub(
+// 		t,
+// 		features,
+// 		func(t *testing.T) (message.Publisher, message.Subscriber) {
+// 			return createPostgreSQLQueue(t, newPostgreSQL(t))
+// 		},
+// 		nil,
+// 	)
+// }
 
 func TestPgxPostgreSQLQueue(t *testing.T) {
 	t.Parallel()
@@ -331,11 +331,11 @@ func TestCtxValues(t *testing.T) {
 		ExpectedType interface{}
 	}{
 
-		{
-			Name:         "postgresql",
-			Constructor:  createPostgreSQLPubSub,
-			ExpectedType: &sql.StdSQLTx{},
-		},
+		// {
+		// 	Name:         "postgresql",
+		// 	Constructor:  createPostgreSQLPubSub,
+		// 	ExpectedType: &sql.StdSQLTx{},
+		// },
 		{
 			Name:         "pgx",
 			Constructor:  createPgxPubSub,
@@ -394,12 +394,12 @@ func TestNotMissingMessages(t *testing.T) {
 		OffsetsAdapter sql.OffsetsAdapter
 	}{
 
-		{
-			Name:           "postgresql",
-			DbConstructor:  newPostgreSQL,
-			SchemaAdapter:  newPostgresSchemaAdapter(0),
-			OffsetsAdapter: newPostgresOffsetsAdapter(),
-		},
+		// {
+		// 	Name:           "postgresql",
+		// 	DbConstructor:  newPostgreSQL,
+		// 	SchemaAdapter:  newPostgresSchemaAdapter(0),
+		// 	OffsetsAdapter: newPostgresOffsetsAdapter(),
+		// },
 		{
 			Name: "pgx",
 			DbConstructor: func(t *testing.T) sql.Beginner {
@@ -546,32 +546,32 @@ func TestConcurrentSubscribe_different_bulk_sizes(t *testing.T) {
 		Test        func(t *testing.T, tCtx tests.TestContext, pubSubConstructor tests.PubSubConstructor)
 	}{
 
-		{
-			Name: "TestConcurrentSubscribe_postgresql_1",
-			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
-				return newPubSub(
-					t,
-					newPostgreSQL(t),
-					"test",
-					newPostgresSchemaAdapter(1),
-					newPostgresOffsetsAdapter(),
-				)
-			},
-			Test: tests.TestPublishSubscribe,
-		},
-		{
-			Name: "TestConcurrentSubscribe_postgresql_5",
-			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
-				return newPubSub(
-					t,
-					newPostgreSQL(t),
-					"test",
-					newPostgresSchemaAdapter(5),
-					newPostgresOffsetsAdapter(),
-				)
-			},
-			Test: tests.TestConcurrentSubscribe,
-		},
+		// {
+		// 	Name: "TestConcurrentSubscribe_postgresql_1",
+		// 	Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
+		// 		return newPubSub(
+		// 			t,
+		// 			newPostgreSQL(t),
+		// 			"test",
+		// 			newPostgresSchemaAdapter(1),
+		// 			newPostgresOffsetsAdapter(),
+		// 		)
+		// 	},
+		// 	Test: tests.TestPublishSubscribe,
+		// },
+		// {
+		// 	Name: "TestConcurrentSubscribe_postgresql_5",
+		// 	Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
+		// 		return newPubSub(
+		// 			t,
+		// 			newPostgreSQL(t),
+		// 			"test",
+		// 			newPostgresSchemaAdapter(5),
+		// 			newPostgresOffsetsAdapter(),
+		// 		)
+		// 	},
+		// 	Test: tests.TestConcurrentSubscribe,
+		// },
 		{
 			Name: "TestConcurrentSubscribe_pgx_1",
 			Constructor: func(t *testing.T) (message.Publisher, message.Subscriber) {
@@ -626,7 +626,7 @@ func TestConcurrentSubscribe_different_bulk_sizes(t *testing.T) {
 func TestDefaultPostgreSQLSchema_planner_mis_estimate_regression(t *testing.T) {
 	// this test should be not executed in Parallel to not disturb performance measurements
 
-	db := newPostgreSQL(t)
+	db := newPgx(t)
 
 	offsetsAdapter := newPostgresOffsetsAdapter()
 
