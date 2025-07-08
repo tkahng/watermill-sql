@@ -85,3 +85,8 @@ func (a DefaultPostgreSQLOffsetsAdapter) BeforeSubscribingQueries(params BeforeS
 		},
 	}, nil
 }
+
+func (a DefaultPostgreSQLOffsetsAdapter) DeleteAllOffsetsQuery(topic string) string {
+
+	return `DELETE FROM ` + a.MessagesOffsetsTable(topic)
+}

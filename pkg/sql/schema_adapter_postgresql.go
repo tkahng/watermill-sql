@@ -256,6 +256,10 @@ func (s DefaultPostgreSQLSchema) RequiresTransaction() bool {
 	return !s.InitializeSchemaWithoutTransaction
 }
 
+func (s DefaultPostgreSQLSchema) DeleteAllMessagesQuery(topic string) string {
+	return fmt.Sprintf("DELETE FROM %s", s.MessagesTable(topic))
+}
+
 func DefaultSchemaInitializationLock(appName string) int {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte("schema_init:" + appName))

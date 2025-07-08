@@ -63,7 +63,6 @@ func TestPostgreSQLQueueSchemaAdapter(t *testing.T) {
 			msg.Ack()
 		case <-time.After(100 * time.Millisecond):
 			t.Errorf("expected to receive message")
-			break
 		}
 	}
 
