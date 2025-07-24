@@ -98,7 +98,7 @@ func NewPostgreSQLDelayedRequeuer(config DelayedRequeuerConfig) (*DelayedRequeue
 		return nil, err
 	}
 
-	publisher, err := NewDelayedPostgreSQLPublisher(config.DB, DelayedPostgreSQLPublisherConfig{
+	publisher, err := NewDelayedPostgreSQLPublisher(config.DB, SingleTableDelayedPostgreSQLPublisherConfig{
 		Logger: config.Logger,
 	})
 	if err != nil {

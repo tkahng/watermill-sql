@@ -9,7 +9,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-type DelayedPostgreSQLPublisherConfig struct {
+type SingleTableDelayedPostgreSQLPublisherConfig struct {
 	// DelayPublisherConfig is a configuration for the delay.Publisher.
 	DelayPublisherConfig delay.PublisherConfig
 
@@ -19,7 +19,7 @@ type DelayedPostgreSQLPublisherConfig struct {
 	Logger watermill.LoggerAdapter
 }
 
-func (c *DelayedPostgreSQLPublisherConfig) setDefaults() {
+func (c *SingleTableDelayedPostgreSQLPublisherConfig) setDefaults() {
 	if c.Logger == nil {
 		c.Logger = watermill.NopLogger{}
 	}
@@ -27,7 +27,7 @@ func (c *DelayedPostgreSQLPublisherConfig) setDefaults() {
 
 // NewDelayedPostgreSQLPublisher creates a new Publisher that stores messages in PostgreSQL with a delay.
 // The delay can be set per message with the Watermill's components/delay metadata.
-func NewDelayedPostgreSQLPublisher(db ContextExecutor, config DelayedPostgreSQLPublisherConfig) (message.Publisher, error) {
+func NewDelayedPostgreSQLPublisher(db ContextExecutor, config SingleTableDelayedPostgreSQLPublisherConfig) (message.Publisher, error) {
 	config.setDefaults()
 
 	publisherConfig := PublisherConfig{

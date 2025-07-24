@@ -19,7 +19,7 @@ func TestDelayedPostgreSQL(t *testing.T) {
 
 	db := newPostgreSQL(t)
 
-	pub, err := sql.NewDelayedPostgreSQLPublisher(db, sql.DelayedPostgreSQLPublisherConfig{
+	pub, err := sql.NewDelayedPostgreSQLPublisher(db, sql.SingleTableDelayedPostgreSQLPublisherConfig{
 		DelayPublisherConfig: delay.PublisherConfig{
 			DefaultDelayGenerator: func(params delay.DefaultDelayGeneratorParams) (delay.Delay, error) {
 				return delay.For(time.Second), nil
@@ -67,7 +67,7 @@ func TestDelayedPostgreSQL_NoDelay(t *testing.T) {
 
 	db := newPostgreSQL(t)
 
-	pub, err := sql.NewDelayedPostgreSQLPublisher(db, sql.DelayedPostgreSQLPublisherConfig{
+	pub, err := sql.NewDelayedPostgreSQLPublisher(db, sql.SingleTableDelayedPostgreSQLPublisherConfig{
 		DelayPublisherConfig: delay.PublisherConfig{
 			AllowNoDelay: true,
 		},
