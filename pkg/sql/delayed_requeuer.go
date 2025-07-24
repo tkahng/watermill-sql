@@ -11,28 +11,28 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 )
 
-// DelayedRequeuer is a requeuer that uses a delayed publisher and subscriber to requeue messages.
+// SingleTableDelayedRequeuer is a requeuer that uses a delayed publisher and subscriber to requeue messages.
 //
 // After creating it, you should:
 // 1. Add the Middleware() to your router.
 // 2. Run it with the Run method.
-type DelayedRequeuer struct {
+type SingleTableDelayedRequeuer struct {
 	requeuer   *requeuer.Requeuer
 	middleware []message.HandlerMiddleware
 }
 
 // Middleware returns the middleware that should be added to the router.
-func (q DelayedRequeuer) Middleware() []message.HandlerMiddleware {
+func (q SingleTableDelayedRequeuer) Middleware() []message.HandlerMiddleware {
 	return q.middleware
 }
 
 // Run starts the requeuer.
-func (q DelayedRequeuer) Run(ctx context.Context) error {
+func (q SingleTableDelayedRequeuer) Run(ctx context.Context) error {
 	return q.requeuer.Run(ctx)
 }
 
-// DelayedRequeuerConfig is a configuration for DelayedRequeuer.
-type DelayedRequeuerConfig struct {
+// SingleTableDelayedRequeuerConfig is a configuration for DelayedRequeuer.
+type SingleTableDelayedRequeuerConfig struct {
 	// DB is a database connection. Required.
 	DB Beginner
 
@@ -50,7 +50,7 @@ type DelayedRequeuerConfig struct {
 	Logger watermill.LoggerAdapter
 }
 
-func (c *DelayedRequeuerConfig) setDefaults() {
+func (c *SingleTableDelayedRequeuerConfig) setDefaults() {
 	if c.RequeueTopic == "" {
 		c.RequeueTopic = "requeue"
 	}
@@ -78,7 +78,7 @@ func (c *DelayedRequeuerConfig) setDefaults() {
 	}
 }
 
-func (c *DelayedRequeuerConfig) Validate() error {
+func (c *SingleTableDelayedRequeuerConfig) Validate() error {
 	if c.DB == nil {
 		return fmt.Errorf("missing db")
 	}
@@ -90,8 +90,8 @@ func (c *DelayedRequeuerConfig) Validate() error {
 	return nil
 }
 
-// NewPostgreSQLDelayedRequeuer creates a new DelayedRequeuer that uses PostgreSQL as a storage.
-func NewPostgreSQLDelayedRequeuer(config DelayedRequeuerConfig) (*DelayedRequeuer, error) {
+// NewPostgreSQLSingleTableDelayedRequeuer creates a new DelayedRequeuer that uses PostgreSQL as a storage.
+func NewPostgreSQLSingleTableDelayedRequeuer(config SingleTableDelayedRequeuerConfig) (*SingleTableDelayedRequeuer, error) {
 	config.setDefaults()
 	err := config.Validate()
 	if err != nil {
@@ -128,7 +128,7 @@ func NewPostgreSQLDelayedRequeuer(config DelayedRequeuerConfig) (*DelayedRequeue
 		return nil, err
 	}
 
-	return &DelayedRequeuer{
+	return &SingleTableDelayedRequeuer{
 		middleware: []message.HandlerMiddleware{
 			poisonQueue,
 			config.DelayOnError.Middleware,

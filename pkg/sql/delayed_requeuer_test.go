@@ -27,7 +27,7 @@ func TestDelayedRequeuer(t *testing.T) {
 	err := subscriber.(message.SubscribeInitializer).SubscribeInitialize(topic)
 	require.NoError(t, err)
 
-	delayedRequeuer, err := sql.NewPostgreSQLDelayedRequeuer(sql.DelayedRequeuerConfig{
+	delayedRequeuer, err := sql.NewPostgreSQLSingleTableDelayedRequeuer(sql.SingleTableDelayedRequeuerConfig{
 		DB:           db,
 		RequeueTopic: watermill.NewUUID(),
 		Publisher:    publisher,
