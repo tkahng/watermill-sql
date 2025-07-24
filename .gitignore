@@ -6,3 +6,4 @@ docs/content/src-link
 *.out
 *.log
 .mod-cache
+.DS_Store
