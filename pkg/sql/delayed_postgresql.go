@@ -31,7 +31,7 @@ func NewDelayedPostgreSQLPublisher(db ContextExecutor, config DelayedPostgreSQLP
 	config.setDefaults()
 
 	publisherConfig := PublisherConfig{
-		SchemaAdapter:        PostgreSQLQueueSchema{},
+		SchemaAdapter:        SingleTablePostgreSQLQueueSchema{},
 		AutoInitializeSchema: true,
 	}
 
@@ -91,7 +91,7 @@ func NewDelayedPostgreSQLSubscriber(db Beginner, config DelayedPostgreSQLSubscri
 	}
 
 	schemaAdapter := delayedPostgreSQLSchemaAdapter{
-		PostgreSQLQueueSchema: PostgreSQLQueueSchema{
+		SingleTablePostgreSQLQueueSchema: SingleTablePostgreSQLQueueSchema{
 			GenerateWhereClause: func(params GenerateWhereClauseParams) (string, []any) {
 				return where, nil
 			},
@@ -122,11 +122,11 @@ func NewDelayedPostgreSQLSubscriber(db Beginner, config DelayedPostgreSQLSubscri
 }
 
 type delayedPostgreSQLSchemaAdapter struct {
-	PostgreSQLQueueSchema
+	SingleTablePostgreSQLQueueSchema
 }
 
 func (a delayedPostgreSQLSchemaAdapter) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
-	queries, err := a.PostgreSQLQueueSchema.SchemaInitializingQueries(params)
+	queries, err := a.SingleTablePostgreSQLQueueSchema.SchemaInitializingQueries(params)
 	if err != nil {
 		return nil, err
 	}

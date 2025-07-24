@@ -13,7 +13,7 @@ import (
 )
 
 func TestValidateTopicName(t *testing.T) {
-	schemaAdapter := sql.DefaultPostgreSQLSchema{}
+	schemaAdapter := sql.SingleTablePostgreSQLSchema{}
 	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{}
 
 	publisher, subscriber := newPubSub(t, newPostgreSQL(t), "", schemaAdapter, offsetsAdapter)

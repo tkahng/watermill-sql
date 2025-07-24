@@ -21,13 +21,13 @@ func TestDefaultPostgreSQLSchema(t *testing.T) {
 	db := newPostgreSQL(t)
 
 	publisher, err := sql.NewPublisher(db, sql.PublisherConfig{
-		SchemaAdapter:        sql.DefaultPostgreSQLSchema{},
+		SchemaAdapter:        sql.SingleTablePostgreSQLSchema{},
 		AutoInitializeSchema: true,
 	}, logger)
 	require.NoError(t, err)
 
 	subscriber, err := sql.NewSubscriber(db, sql.SubscriberConfig{
-		SchemaAdapter:    sql.DefaultPostgreSQLSchema{},
+		SchemaAdapter:    sql.SingleTablePostgreSQLSchema{},
 		OffsetsAdapter:   sql.DefaultPostgreSQLOffsetsAdapter{},
 		InitializeSchema: true,
 	}, logger)

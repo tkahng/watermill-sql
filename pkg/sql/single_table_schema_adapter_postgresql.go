@@ -13,8 +13,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-// DefaultPostgreSQLSchema is a default implementation of SchemaAdapter based on PostgreSQL.
-type DefaultPostgreSQLSchema struct {
+// SingleTablePostgreSQLSchema is a default implementation of SchemaAdapter based on PostgreSQL.
+type SingleTablePostgreSQLSchema struct {
 	// GenerateMessagesTableName may be used to override how the messages table name is generated.
 	GenerateMessagesTableName func(topic string) string
 
@@ -41,7 +41,7 @@ type DefaultPostgreSQLSchema struct {
 	InitializeSchemaLock int
 }
 
-func (s DefaultPostgreSQLSchema) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
+func (s SingleTablePostgreSQLSchema) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
 	// theoretically this primary key allows duplicate offsets for same transaction_id
 	// but in practice it should not happen with SERIAL, so we can keep one index and make it more
 	// storage efficient
@@ -63,7 +63,7 @@ func (s DefaultPostgreSQLSchema) SchemaInitializingQueries(params SchemaInitiali
 
 	queries := []Query{{Query: createMessagesTable}}
 	if !s.InitializeSchemaWithoutTransaction {
-		lock := DefaultSchemaInitializationLock("watermill")
+		lock := SingleTableSchemaInitializationLock("watermill")
 		if s.InitializeSchemaLock > 0 {
 			lock = s.InitializeSchemaLock
 		}
@@ -76,11 +76,11 @@ func (s DefaultPostgreSQLSchema) SchemaInitializingQueries(params SchemaInitiali
 	return queries, nil
 }
 
-func (s DefaultPostgreSQLSchema) InsertQuery(params InsertQueryParams) (Query, error) {
+func (s SingleTablePostgreSQLSchema) InsertQuery(params InsertQueryParams) (Query, error) {
 	insertQuery := fmt.Sprintf(
 		`INSERT INTO %s (uuid, payload, metadata, topic, transaction_id) VALUES %s`,
 		s.MessagesTable(params.Topic),
-		defaultInsertMarkers(len(params.Msgs)),
+		singleTableInsertMarkers(len(params.Msgs)),
 	)
 
 	args, err := defaultWithTopicInsertArgs(params.Msgs, params.Topic)
@@ -91,7 +91,7 @@ func (s DefaultPostgreSQLSchema) InsertQuery(params InsertQueryParams) (Query, e
 	return Query{insertQuery, args}, nil
 }
 
-func defaultInsertMarkers(count int) string {
+func singleTableInsertMarkers(count int) string {
 	result := strings.Builder{}
 
 	index := 1
@@ -103,7 +103,7 @@ func defaultInsertMarkers(count int) string {
 	return strings.TrimRight(result.String(), ",")
 }
 
-func (s DefaultPostgreSQLSchema) batchSize() int {
+func (s SingleTablePostgreSQLSchema) batchSize() int {
 	if s.SubscribeBatchSize == 0 {
 		return 100
 	}
@@ -111,7 +111,7 @@ func (s DefaultPostgreSQLSchema) batchSize() int {
 	return s.SubscribeBatchSize
 }
 
-func (s DefaultPostgreSQLSchema) SelectQuery(params SelectQueryParams) (Query, error) {
+func (s SingleTablePostgreSQLSchema) SelectQuery(params SelectQueryParams) (Query, error) {
 	// Query inspired by https://event-driven.io/en/ordering_in_postgres_outbox/
 
 	nextOffsetParams := NextOffsetQueryParams{
@@ -206,7 +206,7 @@ func (s DefaultPostgreSQLSchema) SelectQuery(params SelectQueryParams) (Query, e
 	return Query{selectQuery, nextOffsetQuery.Args}, nil
 }
 
-func (s DefaultPostgreSQLSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row, error) {
+func (s SingleTablePostgreSQLSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row, error) {
 	r := Row{}
 	var transactionID XID8
 
@@ -232,14 +232,14 @@ func (s DefaultPostgreSQLSchema) UnmarshalMessage(params UnmarshalMessageParams)
 	return r, nil
 }
 
-func (s DefaultPostgreSQLSchema) MessagesTable(topic string) string {
+func (s SingleTablePostgreSQLSchema) MessagesTable(topic string) string {
 	// if s.GenerateMessagesTableName != nil {
 	// 	return s.GenerateMessagesTableName(topic)
 	// }
 	return `"trk_watermill_messages"`
 }
 
-func (s DefaultPostgreSQLSchema) PayloadColumnType(topic string) string {
+func (s SingleTablePostgreSQLSchema) PayloadColumnType(topic string) string {
 	if s.GeneratePayloadType == nil {
 		return "JSON"
 	}
@@ -247,20 +247,20 @@ func (s DefaultPostgreSQLSchema) PayloadColumnType(topic string) string {
 	return s.GeneratePayloadType(topic)
 }
 
-func (s DefaultPostgreSQLSchema) SubscribeIsolationLevel() sql.IsolationLevel {
+func (s SingleTablePostgreSQLSchema) SubscribeIsolationLevel() sql.IsolationLevel {
 	// For Postgres Repeatable Read is enough.
 	return sql.LevelRepeatableRead
 }
 
-func (s DefaultPostgreSQLSchema) RequiresTransaction() bool {
+func (s SingleTablePostgreSQLSchema) RequiresTransaction() bool {
 	return !s.InitializeSchemaWithoutTransaction
 }
 
-func (s DefaultPostgreSQLSchema) DeleteAllMessagesQuery(topic string) string {
+func (s SingleTablePostgreSQLSchema) DeleteAllMessagesQuery(topic string) string {
 	return fmt.Sprintf("DELETE FROM %s", s.MessagesTable(topic))
 }
 
-func DefaultSchemaInitializationLock(appName string) int {
+func SingleTableSchemaInitializationLock(appName string) int {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte("schema_init:" + appName))
 

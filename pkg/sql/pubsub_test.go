@@ -126,8 +126,8 @@ func newPostgresOffsetsAdapter() sql.DefaultPostgreSQLOffsetsAdapter {
 	}
 }
 
-func newPostgresSchemaAdapter(batchSize int) *sql.DefaultPostgreSQLSchema {
-	return &sql.DefaultPostgreSQLSchema{
+func newPostgresSchemaAdapter(batchSize int) *sql.SingleTablePostgreSQLSchema {
+	return &sql.SingleTablePostgreSQLSchema{
 		InitializeSchemaLock: rand.Intn(1000000),
 		GenerateMessagesTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_%s"`, topic)
@@ -140,7 +140,7 @@ func newPostgresSchemaAdapter(batchSize int) *sql.DefaultPostgreSQLSchema {
 }
 
 func createPgxPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
-	schemaAdapter := &sql.DefaultPostgreSQLSchema{
+	schemaAdapter := &sql.SingleTablePostgreSQLSchema{
 		InitializeSchemaLock: rand.Intn(1000000),
 		GenerateMessagesTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_%s"`, topic)
@@ -160,7 +160,7 @@ func createPgxPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup stri
 }
 
 func createPgxPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) {
-	schemaAdapter := &sql.DefaultPostgreSQLSchema{
+	schemaAdapter := &sql.SingleTablePostgreSQLSchema{
 		InitializeSchemaLock: rand.Intn(1000000),
 		GenerateMessagesTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_pgx_%s"`, topic)
@@ -192,7 +192,7 @@ func createPgxPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 }
 
 func createPostgreSQLQueue(t *testing.T, db sql.Beginner) (message.Publisher, message.Subscriber) {
-	schemaAdapter := sql.PostgreSQLQueueSchema{
+	schemaAdapter := sql.SingleTablePostgreSQLQueueSchema{
 		GeneratePayloadType: func(topic string) string {
 			return "BYTEA"
 		},

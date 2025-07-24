@@ -20,7 +20,7 @@ func TestPostgreSQLQueueSchemaAdapter(t *testing.T) {
 
 	db := newPostgreSQL(t)
 
-	schemaAdapter := sql.PostgreSQLQueueSchema{
+	schemaAdapter := sql.SingleTablePostgreSQLQueueSchema{
 		GenerateWhereClause: func(params sql.GenerateWhereClauseParams) (string, []any) {
 			return "(metadata->>'skip') IS NULL OR (metadata->>'skip') != 'true'", nil
 		},

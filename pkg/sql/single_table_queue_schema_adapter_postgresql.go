@@ -14,10 +14,10 @@ type GenerateWhereClauseParams struct {
 	Topic string
 }
 
-// PostgreSQLQueueSchema is a schema adapter for PostgreSQL that allows filtering messages by some condition.
+// SingleTablePostgreSQLQueueSchema is a schema adapter for PostgreSQL that allows filtering messages by some condition.
 // It DOES NOT support consumer groups.
 // It supports deleting messages on ack.
-type PostgreSQLQueueSchema struct {
+type SingleTablePostgreSQLQueueSchema struct {
 	// GenerateWhereClause is a function that returns a where clause and arguments for the SELECT query.
 	// It may be used to filter messages by some condition.
 	// If empty, no where clause will be added.
@@ -39,7 +39,7 @@ type PostgreSQLQueueSchema struct {
 	SubscribeBatchSize int
 }
 
-func (s PostgreSQLQueueSchema) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
+func (s SingleTablePostgreSQLQueueSchema) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
 	createMessagesTable := ` 
 		CREATE TABLE IF NOT EXISTS ` + s.MessagesTable(params.Topic) + ` (
 			"offset" SERIAL PRIMARY KEY,
@@ -55,11 +55,11 @@ func (s PostgreSQLQueueSchema) SchemaInitializingQueries(params SchemaInitializi
 	return []Query{{Query: createMessagesTable}}, nil
 }
 
-func (s PostgreSQLQueueSchema) InsertQuery(params InsertQueryParams) (Query, error) {
+func (s SingleTablePostgreSQLQueueSchema) InsertQuery(params InsertQueryParams) (Query, error) {
 	insertQuery := fmt.Sprintf(
 		`INSERT INTO %s (uuid, payload, metadata, topic) VALUES %s`,
 		s.MessagesTable(params.Topic),
-		queueInsertMarkers(len(params.Msgs)),
+		queueInsertSingleTableMarkers(len(params.Msgs)),
 	)
 
 	args, err := defaultWithTopicInsertArgs(params.Msgs, params.Topic)
@@ -70,7 +70,7 @@ func (s PostgreSQLQueueSchema) InsertQuery(params InsertQueryParams) (Query, err
 	return Query{insertQuery, args}, nil
 }
 
-func queueInsertMarkers(count int) string {
+func queueInsertSingleTableMarkers(count int) string {
 	result := strings.Builder{}
 
 	index := 1
@@ -82,7 +82,7 @@ func queueInsertMarkers(count int) string {
 	return strings.TrimRight(result.String(), ",")
 }
 
-func (s PostgreSQLQueueSchema) batchSize() int {
+func (s SingleTablePostgreSQLQueueSchema) batchSize() int {
 	if s.SubscribeBatchSize == 0 {
 		return 100
 	}
@@ -90,7 +90,7 @@ func (s PostgreSQLQueueSchema) batchSize() int {
 	return s.SubscribeBatchSize
 }
 
-func (s PostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, error) {
+func (s SingleTablePostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, error) {
 	if params.ConsumerGroup != "" {
 		return Query{}, errors.New("consumer groups are not supported in PostgreSQLQueueSchema")
 	}
@@ -119,7 +119,7 @@ func (s PostgreSQLQueueSchema) SelectQuery(params SelectQueryParams) (Query, err
 	return Query{selectQuery, args}, nil
 }
 
-func (s PostgreSQLQueueSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row, error) {
+func (s SingleTablePostgreSQLQueueSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row, error) {
 	r := Row{}
 
 	err := params.Row.Scan(&r.Offset, &r.UUID, &r.Payload, &r.Metadata, &r.Topic)
@@ -141,7 +141,7 @@ func (s PostgreSQLQueueSchema) UnmarshalMessage(params UnmarshalMessageParams) (
 	return r, nil
 }
 
-func (s PostgreSQLQueueSchema) MessagesTable(topic string) string {
+func (s SingleTablePostgreSQLQueueSchema) MessagesTable(topic string) string {
 	// if s.GenerateMessagesTableName != nil {
 	// 	return s.GenerateMessagesTableName(topic)
 	// }
@@ -149,12 +149,12 @@ func (s PostgreSQLQueueSchema) MessagesTable(topic string) string {
 
 }
 
-func (s PostgreSQLQueueSchema) SubscribeIsolationLevel() sql.IsolationLevel {
+func (s SingleTablePostgreSQLQueueSchema) SubscribeIsolationLevel() sql.IsolationLevel {
 	// For Postgres Repeatable Read is enough.
 	return sql.LevelRepeatableRead
 }
 
-func (s PostgreSQLQueueSchema) payloadColumnType(topic string) string {
+func (s SingleTablePostgreSQLQueueSchema) payloadColumnType(topic string) string {
 	if s.GeneratePayloadType == nil {
 		return "JSON"
 	}

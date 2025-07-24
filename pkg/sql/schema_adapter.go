@@ -50,7 +50,7 @@ type SchemaAdapter interface {
 }
 
 // Deprecated: Use DefaultMySQLSchema instead.
-type DefaultSchema = DefaultPostgreSQLSchema
+type DefaultSchema = SingleTablePostgreSQLSchema
 
 type Row struct {
 	Offset   int64

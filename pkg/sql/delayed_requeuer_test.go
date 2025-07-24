@@ -18,7 +18,7 @@ func TestDelayedRequeuer(t *testing.T) {
 	t.Parallel()
 
 	db := newPostgreSQL(t)
-	schemaAdapter := sql.DefaultPostgreSQLSchema{}
+	schemaAdapter := sql.SingleTablePostgreSQLSchema{}
 	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{}
 	publisher, subscriber := newPubSub(t, db, "test", schemaAdapter, offsetsAdapter)
 

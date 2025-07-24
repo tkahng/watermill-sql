@@ -36,7 +36,7 @@ func TestDefaultInsertMarkers(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%d", tc.Count), func(t *testing.T) {
-			output := defaultInsertMarkers(tc.Count)
+			output := singleTableInsertMarkers(tc.Count)
 			assert.Equal(t, tc.ExpectedOutput, output)
 		})
 	}
