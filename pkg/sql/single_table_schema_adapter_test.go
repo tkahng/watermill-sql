@@ -15,9 +15,9 @@ import (
 // TestDefaultMySQLSchema checks if the SQL schema defined in DefaultMySQLSchema is correctly executed
 // and if message marshaling works as intended.
 
-// TestDefaultPostgreSQLSchema checks if the SQL schema defined in DefaultPostgreSQLSchema is correctly executed
+// TestSingleTablePostgreSQLSchema checks if the SQL schema defined in DefaultPostgreSQLSchema is correctly executed
 // and if message marshaling works as intended.
-func TestDefaultPostgreSQLSchema(t *testing.T) {
+func TestSingleTablePostgreSQLSchema(t *testing.T) {
 	db := newPostgreSQL(t)
 
 	publisher, err := sql.NewPublisher(db, sql.PublisherConfig{

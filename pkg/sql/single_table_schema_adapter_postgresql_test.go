@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDefaultInsertMarkers(t *testing.T) {
+func TestSingleTableInsertMarkers(t *testing.T) {
 	testCases := []struct {
 		Count          int
 		ExpectedOutput string

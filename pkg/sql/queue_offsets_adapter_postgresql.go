@@ -48,10 +48,10 @@ func (a PostgreSQLQueueOffsetsAdapter) AckMessageQuery(params AckMessageQueryPar
 }
 
 func (a PostgreSQLQueueOffsetsAdapter) MessagesTable(topic string) string {
-	// if a.GenerateMessagesTableName != nil {
-	// 	return a.GenerateMessagesTableName(topic)
-	// }
-	return `"trk_watermill_queue_messages"`
+	if a.GenerateMessagesTableName != nil {
+		return a.GenerateMessagesTableName(topic)
+	}
+	return fmt.Sprintf(`"watermill_%s"`, topic)
 }
 
 func (a PostgreSQLQueueOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {
