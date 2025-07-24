@@ -2,6 +2,7 @@ package sql_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -27,8 +28,12 @@ func TestSingleTablePostgreSQLSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	subscriber, err := sql.NewSubscriber(db, sql.SubscriberConfig{
-		SchemaAdapter:    sql.SingleTablePostgreSQLSchema{},
-		OffsetsAdapter:   sql.DefaultPostgreSQLOffsetsAdapter{},
+		SchemaAdapter: sql.SingleTablePostgreSQLSchema{},
+		OffsetsAdapter: sql.SingleTablePostgreSQLOffsetsAdapter{
+			GenerateMessagesOffsetsTableName: func(topic string) string {
+				return fmt.Sprintf(`"test_offsets_%s"`, topic)
+			},
+		},
 		InitializeSchema: true,
 	}, logger)
 	require.NoError(t, err)

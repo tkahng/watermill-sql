@@ -14,7 +14,7 @@ import (
 
 func TestValidateTopicName(t *testing.T) {
 	schemaAdapter := sql.SingleTablePostgreSQLSchema{}
-	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{}
+	offsetsAdapter := sql.SingleTablePostgreSQLOffsetsAdapter{}
 
 	publisher, subscriber := newPubSub(t, newPostgreSQL(t), "", schemaAdapter, offsetsAdapter)
 	cleverlyNamedTopic := "some_topic; DROP DATABASE `watermill`"

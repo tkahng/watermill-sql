@@ -118,8 +118,8 @@ func newPgx(t *testing.T) sql.Beginner {
 // 	)
 // }
 
-func newPostgresOffsetsAdapter() sql.DefaultPostgreSQLOffsetsAdapter {
-	return sql.DefaultPostgreSQLOffsetsAdapter{
+func newPostgresOffsetsAdapter() sql.SingleTablePostgreSQLOffsetsAdapter {
+	return sql.SingleTablePostgreSQLOffsetsAdapter{
 		GenerateMessagesOffsetsTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_offsets_%s"`, topic)
 		},
@@ -150,7 +150,7 @@ func createPgxPostgreSQLPubSubWithConsumerGroup(t *testing.T, consumerGroup stri
 		},
 	}
 
-	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{
+	offsetsAdapter := sql.SingleTablePostgreSQLOffsetsAdapter{
 		GenerateMessagesOffsetsTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_offsets_%s"`, topic)
 		},
@@ -170,7 +170,7 @@ func createPgxPubSubWithConsumerGroup(t *testing.T, consumerGroup string) (messa
 		},
 	}
 
-	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{
+	offsetsAdapter := sql.SingleTablePostgreSQLOffsetsAdapter{
 		GenerateMessagesOffsetsTableName: func(topic string) string {
 			return fmt.Sprintf(`"test_pgx_offsets_%s"`, topic)
 		},

@@ -1,20 +1,20 @@
 package sql
 
-// DefaultPostgreSQLOffsetsAdapter is adapter for storing offsets in PostgreSQL database.
+// SingleTablePostgreSQLOffsetsAdapter is adapter for storing offsets in PostgreSQL database.
 //
-// DefaultPostgreSQLOffsetsAdapter is designed to support multiple subscribers with exactly once delivery
+// SingleTablePostgreSQLOffsetsAdapter is designed to support multiple subscribers with exactly once delivery
 // and guaranteed order.
 //
 // We are using FOR UPDATE in NextOffsetQuery to lock consumer group in offsets table.
 //
 // When another consumer is trying to consume the same message, deadlock should occur in ConsumedMessageQuery.
 // After deadlock, consumer will consume next message.
-type DefaultPostgreSQLOffsetsAdapter struct {
+type SingleTablePostgreSQLOffsetsAdapter struct {
 	// GenerateMessagesOffsetsTableName may be used to override how the messages/offsets table name is generated.
 	GenerateMessagesOffsetsTableName func(topic string) string
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) SchemaInitializingQueries(params OffsetsSchemaInitializingQueriesParams) ([]Query, error) {
+func (a SingleTablePostgreSQLOffsetsAdapter) SchemaInitializingQueries(params OffsetsSchemaInitializingQueriesParams) ([]Query, error) {
 	return []Query{
 		{
 			Query: `
@@ -29,7 +29,7 @@ func (a DefaultPostgreSQLOffsetsAdapter) SchemaInitializingQueries(params Offset
 	}, nil
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) NextOffsetQuery(params NextOffsetQueryParams) (Query, error) {
+func (a SingleTablePostgreSQLOffsetsAdapter) NextOffsetQuery(params NextOffsetQueryParams) (Query, error) {
 	return Query{
 		Query: `
 			SELECT 
@@ -44,7 +44,7 @@ func (a DefaultPostgreSQLOffsetsAdapter) NextOffsetQuery(params NextOffsetQueryP
 	}, nil
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) AckMessageQuery(params AckMessageQueryParams) (Query, error) {
+func (a SingleTablePostgreSQLOffsetsAdapter) AckMessageQuery(params AckMessageQueryParams) (Query, error) {
 	ackQuery := `INSERT INTO ` + a.MessagesOffsetsTable(params.Topic) + `(offset_acked, last_processed_transaction_id, consumer_group, topic) 
 	VALUES 
 		($1, $2, $3, $4) 
@@ -58,18 +58,18 @@ func (a DefaultPostgreSQLOffsetsAdapter) AckMessageQuery(params AckMessageQueryP
 	return Query{ackQuery, []any{params.LastRow.Offset, params.LastRow.ExtraData["transaction_id"], params.ConsumerGroup, params.Topic}}, nil
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) MessagesOffsetsTable(topic string) string {
+func (a SingleTablePostgreSQLOffsetsAdapter) MessagesOffsetsTable(topic string) string {
 	// if a.GenerateMessagesOffsetsTableName != nil {
 	// 	return a.GenerateMessagesOffsetsTableName(topic)
 	// }
 	return `"trk_watermill_offsets"`
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {
+func (a SingleTablePostgreSQLOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {
 	return Query{}, nil
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) BeforeSubscribingQueries(params BeforeSubscribingQueriesParams) ([]Query, error) {
+func (a SingleTablePostgreSQLOffsetsAdapter) BeforeSubscribingQueries(params BeforeSubscribingQueriesParams) ([]Query, error) {
 	return []Query{
 		{
 			// It's required for exactly-once-delivery guarantee.
@@ -86,7 +86,7 @@ func (a DefaultPostgreSQLOffsetsAdapter) BeforeSubscribingQueries(params BeforeS
 	}, nil
 }
 
-func (a DefaultPostgreSQLOffsetsAdapter) DeleteAllOffsetsQuery(topic string) string {
+func (a SingleTablePostgreSQLOffsetsAdapter) DeleteAllOffsetsQuery(topic string) string {
 
 	return `DELETE FROM ` + a.MessagesOffsetsTable(topic)
 }

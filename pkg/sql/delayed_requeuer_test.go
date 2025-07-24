@@ -19,7 +19,7 @@ func TestDelayedRequeuer(t *testing.T) {
 
 	db := newPostgreSQL(t)
 	schemaAdapter := sql.SingleTablePostgreSQLSchema{}
-	offsetsAdapter := sql.DefaultPostgreSQLOffsetsAdapter{}
+	offsetsAdapter := sql.SingleTablePostgreSQLOffsetsAdapter{}
 	publisher, subscriber := newPubSub(t, db, "test", schemaAdapter, offsetsAdapter)
 
 	topic := watermill.NewUUID()
