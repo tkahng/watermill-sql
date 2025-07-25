@@ -12,7 +12,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-func TestValidateTopicName(t *testing.T) {
+func TestValidateSingleTableTopicName(t *testing.T) {
 	schemaAdapter := sql.SingleTablePostgreSQLSchema{}
 	offsetsAdapter := sql.SingleTablePostgreSQLOffsetsAdapter{}
 
