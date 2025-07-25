@@ -57,13 +57,13 @@ type Row struct {
 	UUID     []byte
 	Payload  []byte
 	Metadata []byte
-
-	Msg *message.Message
+	Topic    string
+	Msg      *message.Message
 
 	ExtraData map[string]any
 }
 
-func defaultInsertArgs(msgs message.Messages) ([]interface{}, error) {
+func defaultInsertArgs(msgs message.Messages, topic string) ([]interface{}, error) {
 	var args []interface{}
 	for _, msg := range msgs {
 		metadata, err := json.Marshal(msg.Metadata)
@@ -71,7 +71,7 @@ func defaultInsertArgs(msgs message.Messages) ([]interface{}, error) {
 			return nil, fmt.Errorf("could not marshal metadata into JSON for message %s: %w", msg.UUID, err)
 		}
 
-		args = append(args, msg.UUID, []byte(msg.Payload), metadata)
+		args = append(args, msg.UUID, []byte(msg.Payload), metadata, topic)
 	}
 
 	return args, nil

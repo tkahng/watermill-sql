@@ -16,6 +16,10 @@ import (
 type DefaultMySQLOffsetsAdapter struct {
 	// GenerateMessagesOffsetsTableName may be used to override how the messages/offsets table name is generated.
 	GenerateMessagesOffsetsTableName func(topic string) string
+
+	// UseSingleTable determines whether to override the default table name function
+	// to use a singular table instead of table per topic.
+	UseSingleTable bool
 }
 
 func (a DefaultMySQLOffsetsAdapter) SchemaInitializingQueries(params OffsetsSchemaInitializingQueriesParams) ([]Query, error) {
@@ -23,20 +27,21 @@ func (a DefaultMySQLOffsetsAdapter) SchemaInitializingQueries(params OffsetsSche
 		{
 			Query: `
 				CREATE TABLE IF NOT EXISTS ` + a.MessagesOffsetsTable(params.Topic) + ` (
+				topic VARCHAR(255) NOT NULL,
 				consumer_group VARCHAR(255) NOT NULL,
 				offset_acked BIGINT,
 				offset_consumed BIGINT NOT NULL,
-				PRIMARY KEY(consumer_group)
+				PRIMARY KEY(consumer_group, topic)
 			)`,
 		},
 	}, nil
 }
 
 func (a DefaultMySQLOffsetsAdapter) AckMessageQuery(params AckMessageQueryParams) (Query, error) {
-	ackQuery := `INSERT INTO ` + a.MessagesOffsetsTable(params.Topic) + ` (offset_consumed, offset_acked, consumer_group)
-		VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE offset_consumed=VALUES(offset_consumed), offset_acked=VALUES(offset_acked)`
+	ackQuery := `INSERT INTO ` + a.MessagesOffsetsTable(params.Topic) + ` (offset_consumed, offset_acked, consumer_group, topic)
+		VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE offset_consumed=VALUES(offset_consumed), offset_acked=VALUES(offset_acked)`
 
-	return Query{ackQuery, []any{params.LastRow.Offset, params.LastRow.Offset, params.ConsumerGroup}}, nil
+	return Query{ackQuery, []any{params.LastRow.Offset, params.LastRow.Offset, params.ConsumerGroup, params.Topic}}, nil
 }
 
 func (a DefaultMySQLOffsetsAdapter) NextOffsetQuery(params NextOffsetQueryParams) (Query, error) {
@@ -44,9 +49,9 @@ func (a DefaultMySQLOffsetsAdapter) NextOffsetQuery(params NextOffsetQueryParams
 		Query: `SELECT COALESCE(
 				(SELECT offset_acked
 				 FROM ` + a.MessagesOffsetsTable(params.Topic) + `
-				 WHERE consumer_group=? FOR UPDATE
+				 WHERE consumer_group=? AND topic=? FOR UPDATE
 				), 0)`,
-		Args: []any{params.ConsumerGroup},
+		Args: []any{params.ConsumerGroup, params.Topic},
 	}, nil
 }
 
@@ -54,14 +59,17 @@ func (a DefaultMySQLOffsetsAdapter) MessagesOffsetsTable(topic string) string {
 	if a.GenerateMessagesOffsetsTableName != nil {
 		return a.GenerateMessagesOffsetsTableName(topic)
 	}
+	if a.UseSingleTable {
+		return "`watermill_offsets`"
+	}
 	return fmt.Sprintf("`watermill_offsets_%s`", topic)
 }
 
 func (a DefaultMySQLOffsetsAdapter) ConsumedMessageQuery(params ConsumedMessageQueryParams) (Query, error) {
 	// offset_consumed is not queried anywhere, it's used only to detect race conditions with NextOffsetQuery.
-	ackQuery := `INSERT INTO ` + a.MessagesOffsetsTable(params.Topic) + ` (offset_consumed, consumer_group)
-		VALUES (?, ?) ON DUPLICATE KEY UPDATE offset_consumed=VALUES(offset_consumed)`
-	return Query{ackQuery, []interface{}{params.Row.Offset, params.ConsumerGroup}}, nil
+	ackQuery := `INSERT INTO ` + a.MessagesOffsetsTable(params.Topic) + ` (offset_consumed, consumer_group, topic)
+		VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE offset_consumed=VALUES(offset_consumed)`
+	return Query{ackQuery, []interface{}{params.Row.Offset, params.ConsumerGroup, params.Topic}}, nil
 }
 
 func (a DefaultMySQLOffsetsAdapter) BeforeSubscribingQueries(params BeforeSubscribingQueriesParams) ([]Query, error) {

@@ -50,6 +50,10 @@ type DefaultMySQLSchema struct {
 	//
 	// Default value is 100.
 	SubscribeBatchSize int
+
+	// UseSingleTable determines whether to override the default table name function
+	// to use a singular table instead of table per topic.
+	UseSingleTable bool
 }
 
 func (s DefaultMySQLSchema) SchemaInitializingQueries(params SchemaInitializingQueriesParams) ([]Query, error) {
@@ -59,7 +63,8 @@ func (s DefaultMySQLSchema) SchemaInitializingQueries(params SchemaInitializingQ
 		"`uuid` VARCHAR(36) NOT NULL,",
 		"`created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,",
 		"`payload` " + s.PayloadColumnType(params.Topic) + " DEFAULT NULL,",
-		"`metadata` JSON DEFAULT NULL",
+		"`metadata` JSON DEFAULT NULL,",
+		"`topic` text NOT NULL",
 		");",
 	}, "\n")
 
@@ -68,12 +73,12 @@ func (s DefaultMySQLSchema) SchemaInitializingQueries(params SchemaInitializingQ
 
 func (s DefaultMySQLSchema) InsertQuery(params InsertQueryParams) (Query, error) {
 	insertQuery := fmt.Sprintf(
-		`INSERT INTO %s (uuid, payload, metadata) VALUES %s`,
+		`INSERT INTO %s (uuid, payload, metadata, topic) VALUES %s`,
 		s.MessagesTable(params.Topic),
-		strings.TrimRight(strings.Repeat(`(?,?,?),`, len(params.Msgs)), ","),
+		strings.TrimRight(strings.Repeat(`(?,?,?,?),`, len(params.Msgs)), ","),
 	)
 
-	args, err := defaultInsertArgs(params.Msgs)
+	args, err := defaultInsertArgs(params.Msgs, params.Topic)
 	if err != nil {
 		return Query{}, err
 	}
@@ -132,6 +137,9 @@ func (s DefaultMySQLSchema) UnmarshalMessage(params UnmarshalMessageParams) (Row
 func (s DefaultMySQLSchema) MessagesTable(topic string) string {
 	if s.GenerateMessagesTableName != nil {
 		return s.GenerateMessagesTableName(topic)
+	}
+	if s.UseSingleTable {
+		return `watermill_messages`
 	}
 	return fmt.Sprintf("`watermill_%s`", topic)
 }

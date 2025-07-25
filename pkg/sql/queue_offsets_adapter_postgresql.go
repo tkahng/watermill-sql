@@ -14,6 +14,10 @@ type PostgreSQLQueueOffsetsAdapter struct {
 
 	// GenerateMessagesTableName may be used to override how the messages table name is generated.
 	GenerateMessagesTableName func(topic string) string
+
+	// UseSingleTable determines whether to override the default table name function
+	// to use a singular table instead of table per topic.
+	UseSingleTable bool
 }
 
 func (a PostgreSQLQueueOffsetsAdapter) SchemaInitializingQueries(params OffsetsSchemaInitializingQueriesParams) ([]Query, error) {
@@ -50,6 +54,9 @@ func (a PostgreSQLQueueOffsetsAdapter) AckMessageQuery(params AckMessageQueryPar
 func (a PostgreSQLQueueOffsetsAdapter) MessagesTable(topic string) string {
 	if a.GenerateMessagesTableName != nil {
 		return a.GenerateMessagesTableName(topic)
+	}
+	if a.UseSingleTable {
+		return `watermill_queue_messages`
 	}
 	return fmt.Sprintf(`"watermill_%s"`, topic)
 }
